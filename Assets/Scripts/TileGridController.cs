@@ -20,8 +20,8 @@ public class TileGridController : MonoBehaviour
             indices[i] = i;
         }
 
-        // System.Random rng = new System.Random();
-        // rng.Shuffle(indices);
+        System.Random rng = new System.Random();
+        rng.Shuffle(indices);
 
         for (int row = 0; row < _size; row++)
         {
