@@ -40,6 +40,28 @@ public class Board
 
     public int Size { get { return _size; } }
 
+    public bool IsSolved
+    {
+        get
+        {
+            int expected = 0;
+            for (int i = 0; i < _spaces.Length; i++)
+            {
+                if (_spaces[i] == expected)
+                {
+                    // advance expected token to next, or Empty since in winning state the final space is empty
+                    expected = i == _spaces.Length - 2 ? Board.Empty : i + 1;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
     internal void Swap(int srcRow, int srcCol, int dstRow, int dstCol)
     {
         int srcOffset = srcRow * _size + srcCol;
@@ -65,7 +87,7 @@ public class Board
             rows[row] = rowStr;
         }
 
-        return string.Join(", ", rows);
+        return string.Join(", ", rows) + " (Solved: " + IsSolved + ")";
     }
 
 
