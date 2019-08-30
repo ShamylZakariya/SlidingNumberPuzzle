@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using System.Threading;
 
 public class TileGridController : MonoBehaviour
 {
@@ -11,17 +12,26 @@ public class TileGridController : MonoBehaviour
     [SerializeField] int _size = 3;
     [SerializeField] LayerMask _tileLayer = 0;
 
+    [SerializeField] bool _randomize = false;
+    [SerializeField] int _maxSolverSearchDepth = 1024;
+
     Dictionary<int, Tile> _tiles = new Dictionary<int, Tile>();
+    Solver _solver = null;
+    Thread _solverThread = null;
 
     void Start()
     {
-        int []indices = new int[_size * _size - 1];
-        for (int i = 0; i < indices.Length; i++) {
+        int[] indices = new int[_size * _size - 1];
+        for (int i = 0; i < indices.Length; i++)
+        {
             indices[i] = i;
         }
 
-        System.Random rng = new System.Random();
-        rng.Shuffle(indices);
+        if (_randomize)
+        {
+            System.Random rng = new System.Random();
+            rng.Shuffle(indices);
+        }
 
         for (int row = 0; row < _size; row++)
         {
@@ -34,11 +44,28 @@ public class TileGridController : MonoBehaviour
                     tile.Index = indices[i];
                     tile.Row = row;
                     tile.Col = col;
-        
-                    _tiles[tile.Index] = tile;        
+
+                    _tiles[tile.Index] = tile;
                     UpdateTile(tile);
                 }
             }
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (_solver != null)
+        {
+            _solver.Cancel();
+        }
+        if (_solverThread != null)
+        {
+            try
+            {
+                _solverThread.Abort();
+            }
+            catch (ThreadAbortException)
+            { }
         }
     }
 
@@ -48,6 +75,11 @@ public class TileGridController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             Debug.LogFormat("Current board state:\n{0}", CurrentBoardState.ToString());
+        }
+
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            Solve();
         }
 
         if (Input.GetMouseButtonDown(0))
@@ -113,6 +145,47 @@ public class TileGridController : MonoBehaviour
                     UpdateTile(tile);
                 }
             }
+        }
+    }
+
+    private void Solve()
+    {
+        if (_solver == null && _solverThread == null)
+        {
+            _solverThread = new Thread(() =>
+            {
+                Debug.LogFormat("[TileGridController] - WORKER THREAD - Starting solver...");
+
+                _solver = new Solver(CurrentBoardState, _maxSolverSearchDepth);
+                int[] solution = _solver.Solution;
+
+                if (solution != null)
+                {
+                    Debug.LogFormat("[TileGridController] - WORKER THREAD - solution (length:{0}): [{1}]", solution.Length, string.Join(", ", solution));
+                }
+                else
+                {
+                    Debug.LogFormat("[TileGridController] - WORKER THREAD - found no solution for current board state");
+                }
+
+
+                UnityMainThreadDispatcher.Instance().Enqueue(() =>
+                {
+                    _solver = null;
+                    _solverThread = null;
+
+                    if (solution != null)
+                    {
+                        Debug.LogFormat("[TileGridController] - MAIN THREAD solution (length:{0}): [{1}]", solution.Length, string.Join(", ", solution));
+                    }
+                    else
+                    {
+                        Debug.LogFormat("[TileGridController] - MAIN THREAD found no solution for current board state");
+                    }
+                });
+            });
+
+            _solverThread.Start();
         }
     }
 }

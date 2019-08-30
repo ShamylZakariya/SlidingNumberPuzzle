@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 public class Board
 {
 
@@ -62,6 +64,52 @@ public class Board
         }
     }
 
+    /// <summary>
+    /// Get the values of the tiles which can be played in the current board state
+    /// </summary>
+    /// <value>Array of tile values which can be legally played</value>
+    public int[] AvailableMoves
+    {
+        get
+        {
+            // find the empty space, and sum up the space left/right/up/down from it which can be played
+            int eRow = -1, eCol = -1;
+            bool found = false;
+            for (int row = 0; row < _size && !found; row++)
+            {
+                for (int col = 0; col < _size && !found; col++)
+                {
+                    if (_spaces[row * _size + col] == Board.Empty)
+                    {
+                        eRow = row;
+                        eCol = col;
+                        found = true;
+                    }
+                }
+            }
+
+            List<int> moves = new List<int>();
+            if (eRow > 0)
+            {
+                moves.Add(Get(eRow - 1, eCol));
+            }
+            if (eRow < _size - 1)
+            {
+                moves.Add(Get(eRow + 1, eCol));
+            }
+            if (eCol > 0)
+            {
+                moves.Add(Get(eRow, eCol - 1));
+            }
+            if (eCol < _size - 1)
+            {
+                moves.Add(Get(eRow, eCol + 1));
+            }
+
+            return moves.ToArray();
+        }
+    }
+
     internal void Swap(int srcRow, int srcCol, int dstRow, int dstCol)
     {
         int srcOffset = srcRow * _size + srcCol;
@@ -87,7 +135,32 @@ public class Board
             rows[row] = rowStr;
         }
 
-        return string.Join(", ", rows) + " (Solved: " + IsSolved + ")";
+        return string.Join(", ", rows) + " (Solved: " + IsSolved + ") (Plays: " + string.Join(", ", AvailableMoves) + ")";
+    }
+
+    /// <summary>
+    /// Play the tile with a specific value (tiles have value from
+    /// </summary>
+    /// <param name="value">The value of the tile to play</param>
+    /// <returns>A new board representing the next board state, or null if value was not on the board, or the play was not legal</returns>
+    public Board Play(int value)
+    {
+        int fRow = -1, fCol = -1;
+        bool found = false;
+        for (int row = 0; row < _size && !found; row++)
+        {
+            for (int col = 0; col < _size && !found; col++)
+            {
+                if (_spaces[row * _size + col] == value)
+                {
+                    fRow = row;
+                    fCol = col;
+                    found = true;
+                }
+            }
+        }
+
+        return found ? Play(fRow, fCol) : null;
     }
 
 
