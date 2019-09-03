@@ -17,7 +17,7 @@ public class TileGridController : MonoBehaviour
     [SerializeField] int _stopAfterNSolutionsFound = 256;
 
     Dictionary<int, Tile> _tiles = new Dictionary<int, Tile>();
-    Solver _solver = null;
+    TreeSolver _treeSolver = null;
     Thread _solverThread = null;
 
     void Start()
@@ -55,9 +55,9 @@ public class TileGridController : MonoBehaviour
 
     void OnDestroy()
     {
-        if (_solver != null)
+        if (_treeSolver != null)
         {
-            _solver.Cancel();
+            _treeSolver.Cancel();
         }
         if (_solverThread != null)
         {
@@ -80,7 +80,7 @@ public class TileGridController : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.S))
         {
-            Solve();
+            Solve_TreeSolver();
         }
 
         if (Input.GetMouseButtonDown(0))
@@ -149,30 +149,20 @@ public class TileGridController : MonoBehaviour
         }
     }
 
-    private void Solve()
+    private void Solve_TreeSolver()
     {
-        if (_solver == null && _solverThread == null)
+        if (_treeSolver == null && _solverThread == null)
         {
             _solverThread = new Thread(() =>
             {
                 Debug.LogFormat("[TileGridController] - WORKER THREAD - Starting solver...");
 
-                _solver = new Solver(CurrentBoardState, _maxSolverSearchDepth, _stopAfterNSolutionsFound);
-                int[] solution = _solver.Solution;
-
-                if (solution != null)
-                {
-                    Debug.LogFormat("[TileGridController] - WORKER THREAD - solution (length:{0}): [{1}]", solution.Length, string.Join(", ", solution));
-                }
-                else
-                {
-                    Debug.LogFormat("[TileGridController] - WORKER THREAD - found no solution for current board state");
-                }
-
+                _treeSolver = new Solvers.TreeSolver(CurrentBoardState, _maxSolverSearchDepth, _stopAfterNSolutionsFound);
+                int[] solution = _treeSolver.Solution;
 
                 UnityMainThreadDispatcher.Instance().Enqueue(() =>
                 {
-                    _solver = null;
+                    _treeSolver = null;
                     _solverThread = null;
 
                     if (solution != null)
