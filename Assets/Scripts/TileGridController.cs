@@ -6,19 +6,14 @@ using System.Threading;
 
 public class TileGridController : MonoBehaviour
 {
-    [SerializeField] GameObject _platform;
-    [SerializeField] GameObject _tilePrefab;
+    [SerializeField] GameObject _platform = null;
+    [SerializeField] GameObject _tilePrefab = null;
     [SerializeField] float _tileSeparation = 0.03f;
     [SerializeField] int _size = 3;
     [SerializeField] LayerMask _tileLayer = 0;
-
     [SerializeField] bool _randomize = false;
-    [SerializeField] int _maxSolverSearchDepth = 1024;
-    [SerializeField] int _stopAfterNSolutionsFound = 256;
 
     Dictionary<int, Tile> _tiles = new Dictionary<int, Tile>();
-    TreeSolver _treeSolver = null;
-    Thread _solverThread = null;
 
     void Start()
     {
@@ -53,23 +48,6 @@ public class TileGridController : MonoBehaviour
         }
     }
 
-    void OnDestroy()
-    {
-        if (_treeSolver != null)
-        {
-            _treeSolver.Cancel();
-        }
-        if (_solverThread != null)
-        {
-            try
-            {
-                _solverThread.Abort();
-            }
-            catch (ThreadAbortException)
-            { }
-        }
-    }
-
     // Update is called once per frame
     void Update()
     {
@@ -78,9 +56,15 @@ public class TileGridController : MonoBehaviour
             Debug.LogFormat("Current board state:\n{0}", CurrentBoardState.ToString());
         }
 
-        if (Input.GetKeyDown(KeyCode.S))
+        if (Input.GetKeyDown(KeyCode.RightArrow))
         {
-            Solve_TreeSolver();
+            Board current = this.CurrentBoardState;
+            var play = Solvers.StrategicSolver.Next(current);
+            if (play.Item2 != null)
+            {
+                Debug.LogFormat("Played tile {0}", play.Item1);
+                UpdateTiles(play.Item2);
+            }
         }
 
         if (Input.GetMouseButtonDown(0))
@@ -146,37 +130,6 @@ public class TileGridController : MonoBehaviour
                     UpdateTile(tile);
                 }
             }
-        }
-    }
-
-    private void Solve_TreeSolver()
-    {
-        if (_treeSolver == null && _solverThread == null)
-        {
-            _solverThread = new Thread(() =>
-            {
-                Debug.LogFormat("[TileGridController] - WORKER THREAD - Starting solver...");
-
-                _treeSolver = new Solvers.TreeSolver(CurrentBoardState, _maxSolverSearchDepth, _stopAfterNSolutionsFound);
-                int[] solution = _treeSolver.Solution;
-
-                UnityMainThreadDispatcher.Instance().Enqueue(() =>
-                {
-                    _treeSolver = null;
-                    _solverThread = null;
-
-                    if (solution != null)
-                    {
-                        Debug.LogFormat("[TileGridController] - MAIN THREAD solution (length:{0}): [{1}]", solution.Length, string.Join(", ", solution));
-                    }
-                    else
-                    {
-                        Debug.LogFormat("[TileGridController] - MAIN THREAD found no solution for current board state");
-                    }
-                });
-            });
-
-            _solverThread.Start();
         }
     }
 }
