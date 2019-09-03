@@ -16,6 +16,7 @@ public class Solver
         public Board board = null;
         public Edge[] moves = null;
         public Edge incomingEdge = null;
+        internal int depth = 0;
     }
 
     /// <summary>
@@ -32,11 +33,14 @@ public class Solver
     private Vertex _root;
     private List<int> _solution = null;
     private int _maxSearchDepth = 0;
+    private int _stopAfterNSolutions = 1;
     private bool _canceled = false;
+    private int _solutionsFound = 0;
 
-    public Solver(Board initialGameState, int maxSearchDepth = int.MaxValue - 1)
+    public Solver(Board initialGameState, int maxSearchDepth = int.MaxValue - 1, int stopAfterNSolutionsFound = 1)
     {
         _maxSearchDepth = maxSearchDepth;
+        _stopAfterNSolutions = stopAfterNSolutionsFound;
         Vertex root = new Vertex();
         root.board = initialGameState;
         Solve(root, 0);
@@ -73,26 +77,32 @@ public class Solver
         // exit if we've been canceled
         if (_canceled) return;
 
-        // we've already found a solution, stop looking for another
-        if (_solution != null) return;
+        // we've already found enough solutions, we can bail
+        if (_solutionsFound >= _stopAfterNSolutions) return;
 
         // if this board is in a solved state, we need to record the path
         if (current.board.IsSolved)
         {
-            // we have a solution, walk up the parentage to form a path from solution 
-            // to root, reverse it, and add it to _solutions
-            _solution = new List<int>();
+            _solutionsFound++;
 
-            Vertex it = current;
-            while (it != null && it.incomingEdge != null)
+            // record solution if it's shorter than the current best solution
+            if (_solution == null || current.depth < _solution.Count)
             {
-                _solution.Add(it.incomingEdge.move);
-                it = it.incomingEdge.parent;
+                // we have a solution, walk up the parentage to form a path from solution 
+                // to root, reverse it, and add it to _solutions
+                _solution = new List<int>();
+
+                Vertex it = current;
+                while (it != null && it.incomingEdge != null)
+                {
+                    _solution.Add(it.incomingEdge.move);
+                    it = it.incomingEdge.parent;
+                }
+
+                _solution.Reverse();
+
+                Debug.LogFormat("[Solver] - found solution: " + string.Join(", ", _solution));
             }
-
-            _solution.Reverse();
-
-            Debug.LogFormat("[Solver] - found solution: " + string.Join(", ", _solution));
 
             return;
         }
@@ -128,7 +138,8 @@ public class Solver
                 result = new Vertex()
                 {
                     board = pb.B,
-                    moves = null
+                    moves = null,
+                    depth = depth + 1
                 },
                 parent = current
             };

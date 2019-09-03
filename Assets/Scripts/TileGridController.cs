@@ -14,6 +14,7 @@ public class TileGridController : MonoBehaviour
 
     [SerializeField] bool _randomize = false;
     [SerializeField] int _maxSolverSearchDepth = 1024;
+    [SerializeField] int _stopAfterNSolutionsFound = 256;
 
     Dictionary<int, Tile> _tiles = new Dictionary<int, Tile>();
     Solver _solver = null;
@@ -156,7 +157,7 @@ public class TileGridController : MonoBehaviour
             {
                 Debug.LogFormat("[TileGridController] - WORKER THREAD - Starting solver...");
 
-                _solver = new Solver(CurrentBoardState, _maxSolverSearchDepth);
+                _solver = new Solver(CurrentBoardState, _maxSolverSearchDepth, _stopAfterNSolutionsFound);
                 int[] solution = _solver.Solution;
 
                 if (solution != null)

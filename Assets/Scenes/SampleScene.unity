@@ -355,6 +355,9 @@ MonoBehaviour:
   _tileLayer:
     serializedVersion: 2
     m_Bits: 256
+  _randomize: 0
+  _maxSolverSearchDepth: 32
+  _stopAfterNSolutionsFound: 256
 --- !u!114 &878202419
 MonoBehaviour:
   m_ObjectHideFlags: 0
