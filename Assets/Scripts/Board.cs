@@ -40,6 +40,39 @@ public class Board
         return _spaces[row * _size + col];
     }
 
+    public int Get(int index)
+    {
+        return _spaces[index];
+    }
+
+    /// <summary>
+    /// Get row,col of tile with a given index
+    /// </summary>
+    /// <param name="tileIndex">index of tile to file</param>
+    /// <returns>(row,col) tuple of found tile, or (-1,-1) if not in board</returns>
+    public (int, int) Find(int tileIndex)
+    {
+        for (int row = 0; row < _size; row++)
+        {
+            for (int col = 0; col < _size; col++)
+            {
+                if (_spaces[row * _size + col] == tileIndex) 
+                {
+                    return (row, col);
+                }
+            }
+        }
+        return (-1,-1);
+    }
+
+    /// <summary>
+    /// Get the row,col of the empty space
+    /// </summary>
+    public (int,int) FindEmptySpace()
+    {
+        return Find(Empty);
+    }
+
     public int Size { get { return _size; } }
 
     public bool IsSolved

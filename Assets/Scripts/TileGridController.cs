@@ -6,6 +6,7 @@ using System.Threading;
 
 public class TileGridController : MonoBehaviour
 {
+    [SerializeField] CameraShake _cameraShaker;
     [SerializeField] GameObject _platform = null;
     [SerializeField] GameObject _tilePrefab = null;
     [SerializeField] float _tileSeparation = 0.03f;
@@ -14,7 +15,7 @@ public class TileGridController : MonoBehaviour
     [SerializeField] bool _randomize = false;
 
     Dictionary<int, Tile> _tiles = new Dictionary<int, Tile>();
-
+ 
     void Start()
     {
         int[] indices = new int[_size * _size - 1];
@@ -99,6 +100,7 @@ public class TileGridController : MonoBehaviour
         if (b != null)
         {
             UpdateTiles(b);
+            _cameraShaker.AddTrauma(0.5f);
         }
     }
 
